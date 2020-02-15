@@ -6,11 +6,6 @@ const DIV_SELECTOR = 'div.shows-list div.show-card';
 
 puppeteer.use(StealthPlugin());
 
-const usage = () => {
-  console.log('Script error, usage is: \tnode scripts/shows <profile_name>');
-  process.exit(1);
-};
-
 const error = (err) => {
   let statusCode = 400;
   const errorMessage = err.message;
@@ -29,12 +24,8 @@ const textTrim = (text) => {
   return text.replace('\n', '').replace('\t', '').replace('   ', ' ').trim();
 };
 
-const scrape = async () => {
-  if (process.argv.length !== 3) {
-    usage();
-  }
-
-  const url = `https://reverbnation.com/${process.argv[2]}/shows`;
+const scrape = async (profileName) => {
+  const url = `https://reverbnation.com/${profileName}/shows`;
   const browser = await puppeteer.launch({ headless: true });
   let response;
   try {
@@ -72,4 +63,12 @@ const scrape = async () => {
   return response;
 };
 
-(async () => console.log(await scrape()))();
+exports.handler = async (event) => {
+  if (typeof event !== 'object' || !event.hashasOwnProperty('profile')) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Bad request' }),
+    };
+  }
+  return scrape(event.profile);
+};
