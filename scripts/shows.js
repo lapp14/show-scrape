@@ -12,7 +12,17 @@ const usage = () => {
 };
 
 const error = (err) => {
-  console.log(`Error: ${err.code}`);
+  let statusCode = 400;
+  const errorMessage = err.message;
+
+  if (err.message.includes('Protocol error') >= 0) {
+    statusCode = 405;
+  }
+
+  return {
+    statusCode,
+    body: JSON.stringify({ error: errorMessage }),
+  };
 };
 
 const textTrim = (text) => {
@@ -45,14 +55,15 @@ const scrape = async () => {
         directions: $(this).find('span[ng-if="show.google_maps_url"] a').attr('href'),
       });
     });
+
     response = {
-      shows,
+      statusCode: 200,
+      body: JSON.stringify(shows),
     };
+
     await browser.close();
   } catch (err) {
-    response = {
-      error: error(err),
-    };
+    response = error(err);
     await browser.close();
   } finally {
     await browser.close();
@@ -61,4 +72,4 @@ const scrape = async () => {
   return response;
 };
 
-(async () => scrape())();
+(async () => console.log(await scrape()))();
